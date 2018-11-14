@@ -85,7 +85,7 @@ ll=$((!$?))
 while :; do
   printf '\e[H'
 
-  mapfile -t latest < <(tail -5 times 2>/dev/null)
+  mapfile -t latest < <(tail -5 "$file" 2>/dev/null)
   printf "latest 5: %s %s %s %s %s\e[K\n" "${latest[@]}"
   tmp=(${latest[@]//.})
   max=$((10#${tmp[0]})) min=$max sum=$max
