@@ -14,16 +14,17 @@ colors=(
 
 display () {
   declare -n f=faces c=colors
+  e=$'\e[m\e[K\n'
 
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[ 0]]}" "${c[f[ 1]]}" "${c[f[ 2]]}"
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[ 3]]}" "${c[f[ 4]]}" "${c[f[ 5]]}"
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[ 6]]}" "${c[f[ 7]]}" "${c[f[ 8]]}"
-  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  \e[m\n'  "${c[f[36]]}" "${c[f[37]]}" "${c[f[38]]}"  "${c[f[ 9]]}" "${c[f[10]]}" "${c[f[11]]}"  "${c[f[18]]}" "${c[f[19]]}" "${c[f[20]]}"  "${c[f[27]]}" "${c[f[28]]}" "${c[f[29]]}"
-  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  \e[m\n'  "${c[f[39]]}" "${c[f[40]]}" "${c[f[41]]}"  "${c[f[12]]}" "${c[f[13]]}" "${c[f[14]]}"  "${c[f[21]]}" "${c[f[22]]}" "${c[f[23]]}"  "${c[f[30]]}" "${c[f[31]]}" "${c[f[32]]}"
-  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  \e[m\n'  "${c[f[42]]}" "${c[f[43]]}" "${c[f[44]]}"  "${c[f[15]]}" "${c[f[16]]}" "${c[f[17]]}"  "${c[f[24]]}" "${c[f[25]]}" "${c[f[26]]}"  "${c[f[33]]}" "${c[f[34]]}" "${c[f[35]]}"
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[45]]}" "${c[f[46]]}" "${c[f[47]]}"
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[48]]}" "${c[f[49]]}" "${c[f[50]]}"
-  printf '      %s  %s  %s  \e[m\n'                                                                           "${c[f[51]]}" "${c[f[52]]}" "${c[f[53]]}"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[ 0]]}" "${c[f[ 1]]}" "${c[f[ 2]]}"   "$e"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[ 3]]}" "${c[f[ 4]]}" "${c[f[ 5]]}"   "$e"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[ 6]]}" "${c[f[ 7]]}" "${c[f[ 8]]}"   "$e"
+  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s'  "${c[f[36]]}" "${c[f[37]]}" "${c[f[38]]}"  "${c[f[ 9]]}" "${c[f[10]]}" "${c[f[11]]}"  "${c[f[18]]}" "${c[f[19]]}" "${c[f[20]]}"  "${c[f[27]]}" "${c[f[28]]}" "${c[f[29]]}"   "$e"
+  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s'  "${c[f[39]]}" "${c[f[40]]}" "${c[f[41]]}"  "${c[f[12]]}" "${c[f[13]]}" "${c[f[14]]}"  "${c[f[21]]}" "${c[f[22]]}" "${c[f[23]]}"  "${c[f[30]]}" "${c[f[31]]}" "${c[f[32]]}"   "$e"
+  printf '%s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s  %s'  "${c[f[42]]}" "${c[f[43]]}" "${c[f[44]]}"  "${c[f[15]]}" "${c[f[16]]}" "${c[f[17]]}"  "${c[f[24]]}" "${c[f[25]]}" "${c[f[26]]}"  "${c[f[33]]}" "${c[f[34]]}" "${c[f[35]]}"   "$e"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[45]]}" "${c[f[46]]}" "${c[f[47]]}"   "$e"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[48]]}" "${c[f[49]]}" "${c[f[50]]}"   "$e"
+  printf '      %s  %s  %s  %s'                                                                           "${c[f[51]]}" "${c[f[52]]}" "${c[f[53]]}"   "$e"
 }
 
 declare -A moves=(
@@ -61,22 +62,23 @@ apply () {
 }
 
 timer () {
-  read -rsp 'press enter to start '
+  read -rsp $'press enter to start '
 
-  t=0
+  stty -echo
+  start=$(date +%s%N)
   while :; do
-    read -rsn 1 -t .01 -p $'\e[K' && break
-    ((t++))
+    read -rn 1 -t .005 -p $'\e[K' && break
+    t=$(( ($(date +%s%N) - start) / 10000000 ))
     printf "\r%d.%02d\e[K" "$((t/100))" "$((t%100))"
   done
-  while read -rst .1 -p $'\e[K'; do :; done
+  while read -rt .1 -p $'\e[K'; do :; done
+  stty echo
   echo
 }
 
-trap 'tput rmcup; tput cnorm' exit
+trap '[[ ${NOALTSCREEN+x} ]] || tput rmcup; tput cnorm' exit
 tput civis
-tput smcup
-clear
+[[ ${NOALTSCREEN+x} ]] || { tput smcup; clear; }
 
 [[ $1 = ll || $1 = -ll || $1 = --ll ]]
 ll=$((!$?))
@@ -84,7 +86,7 @@ ll=$((!$?))
 
 
 while :; do
-  printf '\e[H'
+  [[ ${NOALTSCREEN+x} ]] || printf '\e[H'
 
   mapfile -t latest < <(tail -5 "$file" 2>/dev/null)
   printf "latest 5: %s %s %s %s %s\e[K\n" "${latest[@]}"
